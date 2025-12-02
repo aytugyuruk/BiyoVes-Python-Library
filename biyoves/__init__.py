@@ -7,6 +7,12 @@ from .corrector import FaceOrientationCorrector
 from .processor import BiometricIDGenerator
 from .layout import PrintLayoutGenerator
 
+# MediaPipe modellerinin hazir olup olmadığını kontrol et
+try:
+    from .mediapipe_config import check_mediapipe_models
+except ImportError:
+    pass
+
 
 class BiyoVes:
     

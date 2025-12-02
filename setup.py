@@ -61,9 +61,8 @@ setup(
     install_requires=[
         "opencv-python>=4.5.0",
         "numpy>=1.19.0",
-        "mediapipe>=0.10.0",
+        "mediapipe>=0.10.0,<0.11.0",  # Spesifik versiyonla minimal indirim
         "onnxruntime>=1.10.0",
-        "Cython>=0.29.0",  # Kullanıcıların kurulum sırasında derlemesi için gerekli
     ],
     setup_requires=[
         "Cython>=0.29.0",

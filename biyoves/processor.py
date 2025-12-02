@@ -1,9 +1,18 @@
 import cv2
-import mediapipe as mp
 import numpy as np
+
+try:
+    import mediapipe as mp
+except ImportError:
+    mp = None
 
 class BiometricIDGenerator:
     def __init__(self):
+        if mp is None:
+            raise ImportError(
+                "MediaPipe kutuphanesi yuklenmemis. \n"
+                "Kurulum: pip install 'mediapipe>=0.10.0'"
+            )
         self.mp_face_mesh = mp.solutions.face_mesh
         self.face_mesh = self.mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True)
         

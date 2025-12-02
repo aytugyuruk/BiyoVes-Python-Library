@@ -1,9 +1,18 @@
 import cv2
-import mediapipe as mp
 import numpy as np
+
+try:
+    import mediapipe as mp
+except ImportError:
+    mp = None
 
 class FaceOrientationCorrector:
     def __init__(self, verbose=False):
+        if mp is None:
+            raise ImportError(
+                "MediaPipe kutuphanesi yuklenmemis. \n"
+                "Kurulum: pip install 'mediapipe>=0.10.0'"
+            )
         self.verbose = verbose
         self.mp_face_detection = mp.solutions.face_detection
         self.face_detection = self.mp_face_detection.FaceDetection(min_detection_confidence=0.4, model_selection=1)
