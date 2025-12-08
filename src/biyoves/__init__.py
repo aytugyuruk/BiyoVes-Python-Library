@@ -22,7 +22,7 @@ class BiyoVes:
         # Modelleri yükle
         # Model dosyasının yolunu bul (paket içinde)
         package_dir = Path(__file__).parent
-        model_path = package_dir / "modnet.onnx"
+        model_path = package_dir / "models" / "modnet.onnx"
         
         if not model_path.exists():
             raise FileNotFoundError(f"Model dosyası bulunamadı: {model_path}")

@@ -11,7 +11,7 @@ class FaceOrientationCorrector:
         self.verbose = verbose
         # Initialize SCRFD model
         package_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(package_dir, "det_500m.onnx")
+        model_path = os.path.join(package_dir, "models", "det_500m.onnx")
         
         if not os.path.exists(model_path):
              raise FileNotFoundError(f"SCRFD model not found: {model_path}")

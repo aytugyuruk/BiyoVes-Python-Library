@@ -88,8 +88,24 @@ img.create_image("abd_vizesi", "4lu", "abd_4lu.jpg")
 - Python >= 3.7
 - OpenCV
 - NumPy
-
 - ONNX Runtime
+
+## Kullanılan Modeller
+
+Bu proje aşağıdaki ONNX modellerini kullanmaktadır:
+
+| Model | Amaç | Kaynak |
+|-------|------|--------|
+| **modnet.onnx** | Arkaplan Kaldırma | [MODNet](https://github.com/ZHKKKe/MODNet) - MODNet is an efficient model to remove background image |
+| **det_500m.onnx** | Yüz Tespiti | [InsightFace SCRFD](https://github.com/deepinsight/insightface) - SCRFD (Stable Cascaded Refinement Face Detector) buffalo_s modeli |
+| **2d106det.onnx** | Yüz Landmark Tespiti | [InsightFace 2D106](https://github.com/deepinsight/insightface) - 106 adet yüz noktası tespit etme modeli |
+
+**Model Klasörü:** Tüm modeller `src/biyoves/models/` klasöründe saklanmaktadır.
+
+### Model Atıfları
+
+- **MODNet**: Ze Liu, etc. "Is Depth Really Necessary for Shadow Detection?"
+- **InsightFace**: Jiankang Deng, etc. "InsightFace: 2D and 3D Face Analysis Project"
 
 ## Lisans
 

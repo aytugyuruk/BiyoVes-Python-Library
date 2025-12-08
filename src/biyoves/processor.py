@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 class BiometricIDGenerator:
     def __init__(self):
         package_dir = os.path.dirname(os.path.abspath(__file__))
-        det_path = os.path.join(package_dir, "det_500m.onnx")
-        lm_path = os.path.join(package_dir, "2d106det.onnx")
+        det_path = os.path.join(package_dir, "models", "det_500m.onnx")
+        lm_path = os.path.join(package_dir, "models", "2d106det.onnx")
 
         try:
             if not os.path.exists(det_path): raise FileNotFoundError(f"Model not found: {det_path}")
