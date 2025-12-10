@@ -3,6 +3,7 @@ import numpy as np
 import logging
 import os
 from .face_utils import SCRFD, Landmark106, Face
+from .remove_bg import BackgroundRemover
 
 logger = logging.getLogger(__name__)
 
@@ -11,10 +12,18 @@ class BiometricIDGenerator:
         package_dir = os.path.dirname(os.path.abspath(__file__))
         det_path = os.path.join(package_dir, "models", "det_500m.onnx")
         lm_path = os.path.join(package_dir, "models", "2d106det.onnx")
+        modnet_path = os.path.join(package_dir, "models", "modnet.onnx")
 
         try:
             if not os.path.exists(det_path): raise FileNotFoundError(f"Model not found: {det_path}")
             if not os.path.exists(lm_path): raise FileNotFoundError(f"Model not found: {lm_path}")
+            
+            # Background remover initialization (optional but recommended)
+            if os.path.exists(modnet_path):
+                self.bg_remover = BackgroundRemover(modnet_path)
+            else:
+                logger.warning(f"Background remover model not found at {modnet_path}. Background removal will be skipped.")
+                self.bg_remover = None
 
             self.detector = SCRFD(det_path)
             self.detector.prepare(0)
@@ -34,6 +43,8 @@ class BiometricIDGenerator:
             "abd_vizesi": {"w": 50, "h": 50, "face_h": 30, "top_margin": 5},
             "schengen": {"w": 35, "h": 45, "face_h": 28, "top_margin": 4}
         }
+    
+
 
     def _get_landmarks(self, face):
         """Returns key landmarks: left_eye, right_eye, chin, nose_tip"""
@@ -82,6 +93,60 @@ class BiometricIDGenerator:
         # Factor 1.0 = Top of skull. Factor 1.3-1.4 = Top of hair.
         
         return eye_y - (face_bottom_half * 1.5)
+
+    def _detect_hair_top_scan(self, img, left_eye, right_eye, chin):
+        """Attempts to find the top pixel of the hair by flood-filling the background."""
+        try:
+            h, w = img.shape[:2]
+            
+            # ROI: X range covering the head
+            face_w = np.linalg.norm(right_eye - left_eye) * 2.0
+            center_x = (left_eye[0] + right_eye[0]) / 2
+            x1 = int(max(0, center_x - face_w))
+            x2 = int(min(w, center_x + face_w))
+            
+            if x2 <= x1: return None
+            
+            # Floodfill from top corners
+            mask = np.zeros((h+2, w+2), np.uint8)
+            flags = 4 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE
+            
+            # Tolerance for background uniformity
+            diff = (25, 25, 25)
+            
+            # We work on a copy to be safe 
+            work_img = img.copy()
+            
+            # Seed points: Top-Left, Top-Right, Top-Center
+            seeds = [(0, 0), (w-1, 0), (int(w/2), 0)]
+            for seed in seeds:
+                if 0 <= seed[0] < w and 0 <= seed[1] < h:
+                     cv2.floodFill(work_img, mask, seed, (0,0,0), diff, diff, flags)
+            
+            # Mask has 255 for background.
+            # Crop to ROI and Face Top area
+            # We only care about the area above the eyes
+            eye_y = int(min(left_eye[1], right_eye[1]))
+            if eye_y <= 0: return None
+            
+            # ROI mask: +1 for mask offset
+            roi_mask = mask[1:eye_y+1, x1+1:x2+1] 
+            
+            # Find foreground pixels (value 0)
+            fg_rows, _ = np.where(roi_mask == 0)
+            
+            if len(fg_rows) == 0:
+                # No foreground found above eyes? 
+                return None
+                
+            # The top-most foreground pixel is the min row index
+            min_y = np.min(fg_rows)
+            
+            return float(min_y)
+            
+        except Exception as e:
+            logger.warning(f"Hair detection failed: {e}")
+            return None
 
     def process_photo(self, image_input, photo_type="biyometrik"):
         if photo_type not in self.PHOTO_SPECS:
@@ -161,62 +226,7 @@ class BiometricIDGenerator:
         else:
              hair_top_y = estimated_hair_top
 
-    def _detect_hair_top_scan(self, img, left_eye, right_eye, chin):
-        """Attempts to find the top pixel of the hair by flood-filling the background."""
-        try:
-            h, w = img.shape[:2]
-            
-            # ROI: X range covering the head
-            face_w = np.linalg.norm(right_eye - left_eye) * 2.0
-            center_x = (left_eye[0] + right_eye[0]) / 2
-            x1 = int(max(0, center_x - face_w))
-            x2 = int(min(w, center_x + face_w))
-            
-            if x2 <= x1: return None
-            
-            # Floodfill from top corners
-            mask = np.zeros((h+2, w+2), np.uint8)
-            flags = 4 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE
-            
-            # Tolerance for background uniformity
-            diff = (25, 25, 25)
-            
-            # We work on a copy to be safe (though mask_only shouldn't change img, but floodFill requires it)
-            # Actually floodFill DOES modify image if not mask_only, but with mask_only it might not.
-            # To be 100% safe from OpenCV quirks: 
-            work_img = img.copy()
-            
-            # Seed points: Top-Left, Top-Right, Top-Center
-            seeds = [(0, 0), (w-1, 0), (int(w/2), 0)]
-            for seed in seeds:
-                if 0 <= seed[0] < w and 0 <= seed[1] < h:
-                     cv2.floodFill(work_img, mask, seed, (0,0,0), diff, diff, flags)
-            
-            # Mask has 255 for background.
-            # Crop to ROI and Face Top area
-            # We only care about the area above the eyes
-            eye_y = int(min(left_eye[1], right_eye[1]))
-            if eye_y <= 0: return None
-            
-            # ROI mask: +1 for mask offset
-            roi_mask = mask[1:eye_y+1, x1+1:x2+1] 
-            
-            # Find foreground pixels (value 0)
-            # np.where returns (row_indices, col_indices)
-            fg_rows, _ = np.where(roi_mask == 0)
-            
-            if len(fg_rows) == 0:
-                # No foreground found above eyes? (Maybe bald and background filled everything?)
-                return None
-                
-            # The top-most foreground pixel is the min row index
-            min_y = np.min(fg_rows)
-            
-            return float(min_y)
-            
-        except Exception as e:
-            logger.warning(f"Hair detection failed: {e}")
-            return None
+
         face_height_px = abs(chin[1] - hair_top_y)
         
         target_face_h_px = spec['face_h'] * self.PIXELS_PER_MM
@@ -247,5 +257,12 @@ class BiometricIDGenerator:
         
         final_canvas = cv2.warpAffine(rotated_img, M_scale_trans, (target_w, target_h), 
                                       flags=cv2.INTER_LANCZOS4, borderValue=(255, 255, 255))
+        
+        # 4. Background Removal
+        if self.bg_remover:
+            # We process the final cropped canvas. It's faster and cleaner.
+            final_canvas_clean = self.bg_remover.process(final_canvas)
+            if final_canvas_clean is not None:
+                final_canvas = final_canvas_clean
         
         return final_canvas

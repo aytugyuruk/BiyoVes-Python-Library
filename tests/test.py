@@ -4,7 +4,13 @@ import sys
 import cv2
 
 # Add src to path to ensure we can import the package
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+# We use insert(0) to prioritize local src over installed packages
+src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+
+import biyoves
+print(f"DEBUG: biyoves imported from {biyoves.__file__}")
 
 from biyoves.processor import BiometricIDGenerator
 from biyoves.layout import PrintLayoutGenerator
@@ -12,7 +18,8 @@ from biyoves.layout import PrintLayoutGenerator
 def main():
     # Define paths
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    input_path = os.path.join(base_dir, "example.png")
+    input_path = os.path.join(base_dir, "image.png")
+
     output_path = os.path.join(base_dir, "test_result_4lu_biyometrik.jpg")
     
     # Check input
