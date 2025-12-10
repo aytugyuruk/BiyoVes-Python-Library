@@ -38,10 +38,10 @@ class BiometricIDGenerator:
         self.PIXELS_PER_MM = self.DPI / 25.4
 
         self.PHOTO_SPECS = {
-            "biyometrik": {"w": 50, "h": 60, "face_h": 34, "top_margin": 5}, # ICAO: Face 32-36mm. Target 34.
-            "vesikalik": {"w": 45, "h": 60, "face_h": 30, "top_margin": 5},
-            "abd_vizesi": {"w": 50, "h": 50, "face_h": 30, "top_margin": 5},
-            "schengen": {"w": 35, "h": 45, "face_h": 28, "top_margin": 4}
+            "biyometrik": {"w": 50, "h": 60, "face_h": 34, "top_margin": 2.5}, # ICAO: Face 32-36mm. Target 34.
+            "vesikalik": {"w": 45, "h": 60, "face_h": 30, "top_margin": 2.5},
+            "abd_vizesi": {"w": 50, "h": 50, "face_h": 30, "top_margin": 2.5},
+            "schengen": {"w": 35, "h": 45, "face_h": 28, "top_margin": 2.0}
         }
     
 

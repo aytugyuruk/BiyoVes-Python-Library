@@ -42,22 +42,22 @@ class BiyoVes:
         if original_img is None:
             raise FileNotFoundError(f"Giriş resmi bulunamadı: {self.image_path}")
         
-        # 2. Arkaplan Temizleme
-        bg_removed_img = self.bg_remover.process(original_img)
-        if bg_removed_img is None:
-            raise RuntimeError("Arkaplan silme başarısız.")
-        
-        # 3. Yüz Yönü Düzeltme
-        corrected_img = self.corrector.correct_image(bg_removed_img)
+        # 2. Yüz Yönü Düzeltme (Oryantasyon)
+        # Arkaplan temizlemeden önce yapmak daha sağlıklı olabilir (yüz bulucu için)
+        # Ayrıca processor.py içinde arkaplan temizleme artık mevcut (kırpılmış resim üzerinde çalışıyor = daha hızlı)
+        corrected_img = self.corrector.correct_image(original_img)
         if corrected_img is None:
-            raise RuntimeError("Oryantasyon düzeltme hatası.")
+            # Yüz bulunamazsa orjinali ile devam etmeyi deneyebiliriz veya hata verebiliriz.
+            logger.warning("Oryantasyon düzeltme sırasında yüz bulunamadı, orjinal resim kullanılıyor.")
+            corrected_img = original_img
         
-        # 4. Biyometrik İşleme (Crop & Resize)
+        # 3. Biyometrik İşleme (Crop & Resize & Background Removal)
+        # Processor artık arkaplanı kendisi temizliyor.
         processed_img = self.processor.process_photo(corrected_img, photo_type=photo_type)
         if processed_img is None:
             raise RuntimeError("Yüz bulunamadı veya işlenemedi.")
         
-        # 5. Baskı Şablonu (Layout)
+        # 4. Baskı Şablonu (Layout)
         final_layout = self.layout_gen.generate_layout(processed_img, layout_type=layout_type)
         
         if final_layout is None:
