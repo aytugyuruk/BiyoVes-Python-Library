@@ -1,6 +1,6 @@
 # BiyoVes 📸
 
-Yapay Zeka destekli Biyometrik, Vesikalık ve Vize fotoğrafları oluşturma aracı.
+Yapay Zeka destekli Biyometrik, Vesikalık ve Vize fotoğrafları oluşturma kütüphanesi.
 
 ## Kurulum
 
