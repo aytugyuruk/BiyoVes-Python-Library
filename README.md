@@ -1,4 +1,4 @@
-# BiyoVes 📸
+# BiyoVes - Python Library
 
 Yapay Zeka destekli Biyometrik, Vesikalık ve Vize fotoğrafları oluşturma kütüphanesi.
 
